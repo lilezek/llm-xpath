@@ -3,3 +3,4 @@ chunks/
 dist/
 *example*.html
 .env
+.llmxpath

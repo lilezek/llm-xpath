@@ -11,65 +11,104 @@ import FilterNonEnglishClasses from './steps/filter_non_english_classes.js';
 import SubtreeStrategy from './chunking/subtree_strategy.js';
 import GroupingStrategy from './chunking/grouping_strategy.js';
 import LLMChatProcessChunk from './LLM/llm_chat.js';
+import XPathResult from './xPathResult.js';
 
-const example = fs.readFileSync('twitch_example.html', 'utf8');
-const root = parse(example);
+const processingSteps = [
+    FilterNodes,
+    FilterAttributes,
+    FilterNonEnglishClasses,
+    FilterEmptyNodes,
+    TrimText,
+    ExtractLists,
+];
 
-const size_orig = root.toString().length;
-FilterNodes(root);
-const size_filter_nodes = root.toString().length;
-FilterAttributes(root);
-const size_filter_attrs = root.toString().length;
-FilterNonEnglishClasses(root);
-const size_filter_classes = root.toString().length;
-FilterEmptyNodes(root);
-const size_filter_empty = root.toString().length;
-TrimText(root);
-const size_trim_text = root.toString().length;
-ExtractLists(root);
+const noop = () => {};
 
-console.log(`Original size: ${size_orig} bytes`);
-console.log(`Filtered size: ${size_filter_nodes} bytes`);
-console.log(`Filtered attributes: ${size_filter_attrs} bytes`);
-console.log(`Filtered non-english classes: ${size_filter_classes} bytes`);
-console.log(`Filtered empty nodes: ${size_filter_empty} bytes`);
-console.log(`Trimmed text: ${size_trim_text} bytes`);
-
-fs.writeFileSync('twitch_example_filtered.html', root.toString());
+const parser = new DOMParser({
+    errorHandler: {
+        warning: (msg) => noop,
+        error: (msg) => noop,
+        fatalError: (msg) => noop,
+    },
+});
 
 function find(query: string, chunk: string) {
-    const dom = new DOMParser().parseFromString(`<div>${chunk}</div>`);
+    const dom = parser.parseFromString(`<div>${chunk}</div>`);
     const found = xpath.select(query, dom);
     return found;
 }
 
-const sizeLimit = 3000;
-const chunks = GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit);
+function isNode(node: any): node is Node {
+    return node && 'nodeName' in node;
+}
 
-async function main() {
+async function* llmSelector(htmlOrXml: string|Buffer, userInput: string) {
+    try {
+        const load = XPathResult._load(userInput);
+        const found = find(load.xpath, htmlOrXml.toString());
+        if (isNode(found)) {
+            load.result = found;
+            return load;
+        } else if (found instanceof Array && found.length > 0) {
+            load.result = found[0];
+            return load;
+        }
+    } catch (e) {
+        // Ignore ENOENT
+        if (!(e instanceof Error && 'code' in e && e.code === 'ENOENT')) {
+            throw e;
+        }
+    }
+
+    const root = parse(htmlOrXml.toString());
+    for (const step of processingSteps) {
+        step(root);
+    }
+
+    const sizeLimit = 3000;
+    const chunks = GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit);
+
+    // fs.writeFileSync('twitch_example_filtered.html', root.toString());
+
     let i = 0;
     for (const chunk of chunks) {
         fs.writeFileSync(`chunks/twitch_example_${i++}.html`, chunk);
-        const llmResponse = await LLMChatProcessChunk(chunk, "The twitch stream. Find the chat input box. Do not find any other input.");
+        const llmResponse = await LLMChatProcessChunk(chunk, userInput);
         if (!llmResponse) {
-            console.log('No response');
             continue;
         }
 
-        const found = find(llmResponse, root.toString());
-        if (found) {
-            if (found instanceof Array && found.length == 0) {
-                continue;
-            }
-            console.log(`Found in chunk ${i-1}`);
-            console.log(found.toString());
-            console.log(llmResponse);
-            break;
+        const found = find(llmResponse, htmlOrXml.toString());
+
+        if (isNode(found)) {
+            yield new XPathResult(
+                llmResponse,
+                userInput,
+                found,
+                sizeLimit,
+                i,
+            );
+        } else if (found instanceof Array && found.length > 0) {
+            yield new XPathResult(
+                llmResponse,
+                userInput,
+                found[0],
+                sizeLimit,
+                i,
+            );
+        }
+    }
+    return null;
+}
+
+async function main() {
+    const example = fs.readFileSync('telegram_example.html', 'utf8');
+    for await (const res of llmSelector(example, "A web chat page with many users. Find Alfredo")) {
+        console.log(JSON.stringify(res));
+        if (res) {
+            res.save();
         }
     }
 }
 
-main().then(() => console.log('done'));
-
-
-
+main().then(() => console.log('done')).catch(console.error);
