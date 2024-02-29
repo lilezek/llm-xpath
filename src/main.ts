@@ -42,7 +42,9 @@ function isNode(node: any): node is Node {
     return node && 'nodeName' in node;
 }
 
-async function* llmSelector(htmlOrXml: string|Buffer, userInput: string) {
+async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementToFind: string) {
+    const userInput = `Context: ${context}. Element to find: ${elementToFind}`;
+
     try {
         const load = XPathResult._load(userInput);
         const found = find(load.xpath, htmlOrXml.toString());
@@ -101,13 +103,15 @@ async function* llmSelector(htmlOrXml: string|Buffer, userInput: string) {
     return null;
 }
 
+/**
+ * Usage example
+ */
 async function main() {
     const example = fs.readFileSync('telegram_example.html', 'utf8');
-    for await (const res of llmSelector(example, "A web chat page with many users. Find Alfredo")) {
+    for await (const res of llmSelector(example, "Telegram chat page", "input field for message")) {
         console.log(JSON.stringify(res));
-        if (res) {
-            res.save();
-        }
+        res.save();
+        return;
     }
 }
 
