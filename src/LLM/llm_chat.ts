@@ -1,4 +1,4 @@
-import { ChatGPTAPI } from 'chatgpt';
+import { ChatGPTAPI, ChatGPTError } from 'chatgpt';
 import fs from 'fs';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -24,9 +24,28 @@ function isValidJson(json: any): json is {xpath: string | null, p: number} {
     return true;
 }
 
-export default async function LLMChatProcessChunk(chunk: string, userContext: string, probabilityCut = 0.66) {
+export default async function LLMChatProcessChunk(chunk: string, userContext: string, probabilityCut = 0.66, retries = 3) {
     const prompt = `${userContext}\n\`\`\`${chunk}\`\`\``;
-    const response = await api.sendMessage(prompt);
+    let response;
+    let attempts = 0;
+    while (attempts < retries) {
+        try {
+            response = await api.sendMessage(prompt);
+            break;
+        } catch (e) {
+            if (e instanceof ChatGPTError && (e.statusCode ?? 200) >= 500) {
+                attempts++;
+                console.error(`Error in attempt ${attempts}: ${e.message}`);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    if (!response) {
+        throw new Error(`Failed to get a response from the API after ${retries} attempts`);
+    }
+
     const text = response.text;
 
     const m = text.match(responseRE);
