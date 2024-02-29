@@ -12,14 +12,19 @@ import SubtreeStrategy from './chunking/subtree_strategy.js';
 import GroupingStrategy from './chunking/grouping_strategy.js';
 import LLMChatProcessChunk from './LLM/llm_chat.js';
 import XPathResult from './xPathResult.js';
+import ClassMatchToClassContains from './xpath_steps/class_match_to_class_contains.js';
 
-const processingSteps = [
+const domPreprocessing = [
     FilterNodes,
     FilterAttributes,
     FilterNonEnglishClasses,
     FilterEmptyNodes,
     TrimText,
     ExtractLists,
+];
+
+const xpathPostprocessing = [
+    ClassMatchToClassContains
 ];
 
 const noop = () => {};
@@ -63,7 +68,7 @@ async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementTo
     }
 
     const root = parse(htmlOrXml.toString());
-    for (const step of processingSteps) {
+    for (const step of domPreprocessing) {
         step(root);
     }
 
@@ -79,7 +84,11 @@ async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementTo
         if (!llmResponse) {
             continue;
         }
-
+        
+        for (const step of xpathPostprocessing) {
+            llmResponse = step(llmResponse);
+        }
+        
         const found = find(llmResponse, htmlOrXml.toString());
 
         if (isNode(found)) {
