@@ -13,6 +13,7 @@ import GroupingStrategy from './chunking/grouping_strategy.js';
 import LLMChatProcessChunk from './LLM/llm_chat.js';
 import XPathResult from './xPathResult.js';
 import ClassMatchToClassContains from './xpath_steps/class_match_to_class_contains.js';
+import SortingStrategy from './chunking/sorting_strategy.js';
 
 const domPreprocessing = [
     FilterNodes,
@@ -73,14 +74,14 @@ async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementTo
     }
 
     const sizeLimit = 3000;
-    const chunks = GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit);
+    const nodeBundles = SortingStrategy(GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit), elementToFind);
 
-    // fs.writeFileSync('twitch_example_filtered.html', root.toString());
-
-    let i = 0;
-    for (const chunk of chunks) {
-        fs.writeFileSync(`chunks/twitch_example_${i++}.html`, chunk);
-        const llmResponse = await LLMChatProcessChunk(chunk, userInput);
+    let i = -1;
+    for (const nodeBundle of nodeBundles) {
+        const chunk = nodeBundle.map(n => n.toString()).join('');
+        i++;
+        // fs.writeFileSync(`chunks/telegram_example_${i}.html`, chunk);
+        let llmResponse = await LLMChatProcessChunk(chunk, userInput);
         if (!llmResponse) {
             continue;
         }

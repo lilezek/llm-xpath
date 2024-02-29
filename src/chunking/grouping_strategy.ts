@@ -1,11 +1,18 @@
-export default function* GroupingStrategy(chunks: Iterable<string>, sizeLimit: number): Iterable<string> {
-    let currentChunk = '';
-    for (const chunk of chunks) {
-        if (currentChunk.length + chunk.length > sizeLimit) {
+import { HTMLElement } from "node-html-parser";
+
+export default function* GroupingStrategy(nodes: Iterable<HTMLElement>, sizeLimit: number): Iterable<HTMLElement[]> {
+    let currentChunk: HTMLElement[] = [];
+    let totalSize = 0;
+    for (const node of nodes) {
+        const nodeSize = node.toString().length;
+        if (totalSize + nodeSize <= sizeLimit) {
+            currentChunk.push(node);
+            totalSize += nodeSize;
+        } else {
             yield currentChunk;
-            currentChunk = '';
+            currentChunk = [node];
+            totalSize = nodeSize;
         }
-        currentChunk += chunk;
     }
     yield currentChunk;
 }

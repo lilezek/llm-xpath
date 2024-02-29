@@ -17,10 +17,12 @@
     "chatgpt": "^5.2.5",
     "dotenv": "^16.4.5",
     "node-html-parser": "^6.1.12",
+    "string-similarity": "^4.0.4",
     "xpath": "^0.0.34"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
+    "@types/string-similarity": "^4.0.2",
     "wordlist-english": "^1.2.1"
   }
 }
