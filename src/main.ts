@@ -48,7 +48,7 @@ function isNode(node: any): node is Node {
     return node && 'nodeName' in node;
 }
 
-async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementToFind: string) {
+export async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementToFind: string) {
     const userInput = `Context: ${context}. Element to find: ${elementToFind}`;
 
     try {
@@ -112,17 +112,3 @@ async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementTo
     }
     return null;
 }
-
-/**
- * Usage example
- */
-async function main() {
-    const example = fs.readFileSync('telegram_example.html', 'utf8');
-    for await (const res of llmSelector(example, "Telegram chat page", "input field for message")) {
-        console.log(JSON.stringify(res));
-        res.save();
-        return;
-    }
-}
-
-main().then(() => console.log('done')).catch(console.error);
