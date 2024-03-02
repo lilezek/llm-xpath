@@ -48,18 +48,18 @@ function isNode(node: any): node is Node {
     return node && 'nodeName' in node;
 }
 
-export async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementToFind: string) {
-    const userInput = `Context: ${context}. Element to find: ${elementToFind}`;
+export async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementToFind: string, hint: string = elementToFind) {
+    const userInput = `Context: ${context}.\nElement to find: ${elementToFind}`;
 
     try {
         const load = XPathResult._load(userInput);
         const found = find(load.xpath, htmlOrXml.toString());
         if (isNode(found)) {
             load.result = found;
-            return load;
+            yield load;
         } else if (found instanceof Array && found.length > 0) {
             load.result = found[0];
-            return load;
+            yield load;
         }
     } catch (e) {
         // Ignore ENOENT
@@ -74,13 +74,13 @@ export async function* llmSelector(htmlOrXml: string|Buffer, context: string, el
     }
 
     const sizeLimit = 3000;
-    const nodeBundles = SortingStrategy(GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit), elementToFind);
+    const nodeBundles = SortingStrategy(GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit), hint);
 
     let i = -1;
     for (const nodeBundle of nodeBundles) {
         const chunk = nodeBundle.map(n => n.toString()).join('');
         i++;
-        // fs.writeFileSync(`chunks/telegram_example_${i}.html`, chunk);
+        fs.writeFileSync(`chunks/${i}.html`, chunk);
         let llmResponse = await LLMChatProcessChunk(chunk, userInput);
         if (!llmResponse) {
             continue;

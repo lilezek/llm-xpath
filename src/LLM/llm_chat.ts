@@ -14,6 +14,7 @@ const api = new ChatGPTAPI({
         temperature: 0,
         max_tokens: 4000,
         top_p: 0.5,
+        model: "gpt-3.5-turbo-1106"
     },
     systemMessage,
   });
