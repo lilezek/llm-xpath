@@ -19,7 +19,7 @@ const api = new ChatGPTAPI({
     systemMessage,
   });
 
-const responseRE = /```(json)?(.+)```/gms; 
+const responseRE = /({.+})/gms; 
 
 function isValidJson(json: any): json is {xpath: string | null, p: number} {
     if (!json || !('xpath' in json || 'p' in json)) {
@@ -56,8 +56,7 @@ export default async function LLMChatProcessChunk(chunk: string, userContext: st
     let inner = text;
 
     if (m) {
-        // For some reason, the group doesn't work (the regex tests but doesn't capture)
-        inner = m[0].slice(3, -3).trim();
+        inner = m[0].trim();
     }
     
     let object = null;

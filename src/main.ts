@@ -80,7 +80,7 @@ export async function* llmSelector(htmlOrXml: string|Buffer, context: string, el
     for (const nodeBundle of nodeBundles) {
         const chunk = nodeBundle.map(n => n.toString()).join('');
         i++;
-        fs.writeFileSync(`chunks/${i}.html`, chunk);
+        // fs.writeFileSync(`chunks/${i}.html`, chunk);
         let llmResponse = await LLMChatProcessChunk(chunk, userInput);
         if (!llmResponse) {
             continue;
