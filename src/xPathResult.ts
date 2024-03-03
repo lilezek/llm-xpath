@@ -1,9 +1,10 @@
 import * as fs from "fs";
 import { hashString } from "./utils.js";
+import { SelectReturnType } from "xpath";
 
 const DEFAULT_SAVE_DIRECTORY = ".llmxpath/";
 
-export default class XPathResult<N = Node> {
+export default class XPathResult<N = NonNullable<SelectReturnType>> {
     constructor(
         public xpath: string,
         public userInput: string,
@@ -49,7 +50,7 @@ export default class XPathResult<N = Node> {
     /**
      * Interal use only
      */
-    static _load<N = Node>(userInput: string) {
+    static _load<N = NonNullable<SelectReturnType>>(userInput: string) {
         const directory = DEFAULT_SAVE_DIRECTORY;
         const filename = `${directory}${hashString(userInput)}.json`;
         const data = fs.readFileSync(filename, "utf8");

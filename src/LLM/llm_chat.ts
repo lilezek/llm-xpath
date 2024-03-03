@@ -21,14 +21,19 @@ const api = new ChatGPTAPI({
 
 const responseRE = /({.+})/gms; 
 
-function isValidJson(json: any): json is {xpath: string | null, p: number} {
+export interface LLMResponse {
+    xpath: string | null;
+    p: number;
+}
+
+function isValidJson(json: any): json is LLMResponse {
     if (!json || !('xpath' in json || 'p' in json)) {
         return typeof json.p === 'number';
     }
     return true;
 }
 
-export default async function LLMChatProcessChunk(chunk: string, userContext: string, probabilityCut = 0.66, retries = 3) {
+export default async function LLMChatProcessChunk(chunk: string, userContext: string, retries = 3) {
     const prompt = `${userContext}\n\`\`\`${chunk}\`\`\``;
     let response;
     let attempts = 0;
@@ -67,7 +72,7 @@ export default async function LLMChatProcessChunk(chunk: string, userContext: st
     }
 
     if (isValidJson(object)) {
-        return probabilityCut > object.p ? null : object.xpath;
+        return object;
     } else {
         throw new Error(`Invalid json: '${inner}'`);
     }

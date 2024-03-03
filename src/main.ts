@@ -1,4 +1,4 @@
-import { parse } from 'node-html-parser';
+import { HTMLElement, parse } from 'node-html-parser';
 import xpath from 'xpath';
 import { DOMParser } from '@xmldom/xmldom';
 import fs from 'fs';
@@ -28,7 +28,7 @@ const xpathPostprocessing = [
     ClassMatchToClassContains
 ];
 
-const noop = () => {};
+const noop = () => { };
 
 const parser = new DOMParser({
     errorHandler: {
@@ -48,18 +48,45 @@ function isNode(node: any): node is Node {
     return node && 'nodeName' in node;
 }
 
-export async function* llmSelector(htmlOrXml: string|Buffer, context: string, elementToFind: string, hint: string = elementToFind) {
+function domPreprocessingStep(root: HTMLElement) {
+    for (const step of domPreprocessing) {
+        step(root);
+    }
+}
+
+function XPathPostprocessingStep(query: string) {
+    for (const step of xpathPostprocessing) {
+        query = step(query);
+    }
+    return query;
+}
+
+function first(list: xpath.SelectReturnType) {
+    if (list instanceof Array) {
+        if (list.length > 0) {
+            return list[0];
+        }
+    } else {
+        return list;
+    }
+    return null;
+}
+
+export async function* llmSelector(
+    htmlOrXml: string | Buffer,
+    context: string,
+    elementToFind: string,
+    hint: string = elementToFind,
+    probabilityCut = 0.66) {
     const userInput = `Context: ${context}.\nElement to find: ${elementToFind}`;
 
     try {
         const load = XPathResult._load(userInput);
-        const found = find(load.xpath, htmlOrXml.toString());
-        if (isNode(found)) {
+        const found = first(find(load.xpath, htmlOrXml.toString()));
+        if (found) {
             load.result = found;
             yield load;
-        } else if (found instanceof Array && found.length > 0) {
-            load.result = found[0];
-            yield load;
+            return;
         }
     } catch (e) {
         // Ignore ENOENT
@@ -69,46 +96,62 @@ export async function* llmSelector(htmlOrXml: string|Buffer, context: string, el
     }
 
     const root = parse(htmlOrXml.toString());
-    for (const step of domPreprocessing) {
-        step(root);
-    }
+    domPreprocessingStep(root);
 
     const sizeLimit = 3000;
     const nodeBundles = SortingStrategy(GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit), hint);
 
+    let highestProbResponse = null;
     let i = -1;
     for (const nodeBundle of nodeBundles) {
         const chunk = nodeBundle.map(n => n.toString()).join('');
         i++;
         // fs.writeFileSync(`chunks/${i}.html`, chunk);
         let llmResponse = await LLMChatProcessChunk(chunk, userInput);
-        if (!llmResponse) {
-            continue;
-        }
-        
-        for (const step of xpathPostprocessing) {
-            llmResponse = step(llmResponse);
-        }
-        
-        const found = find(llmResponse, htmlOrXml.toString());
 
-        if (isNode(found)) {
+        // Return immediately if the response is above the probability cut
+        if (llmResponse.p >= probabilityCut) {
+            const xpath = XPathPostprocessingStep(llmResponse.xpath ?? '');
+            if (!xpath) {
+                continue;
+            }
+
+            const found = first(find(xpath, htmlOrXml.toString()));
+
+            if (!found) {
+                continue;
+            }
+
             yield new XPathResult(
-                llmResponse,
+                xpath,
                 userInput,
                 found,
                 sizeLimit,
                 i,
             );
-        } else if (found instanceof Array && found.length > 0) {
+        }
+
+        if (highestProbResponse === null || llmResponse.p > highestProbResponse.p) {
+            highestProbResponse = llmResponse;
+        }
+    }
+
+    if (highestProbResponse !== null) {
+        const xpath = XPathPostprocessingStep(highestProbResponse.xpath ?? '');
+        if (!xpath) {
+            return;
+        }
+
+        const found = first(find(xpath, htmlOrXml.toString()));
+
+        if (found) {
             yield new XPathResult(
-                llmResponse,
+                xpath,
                 userInput,
-                found[0],
+                found,
                 sizeLimit,
                 i,
             );
         }
     }
-    return null;
 }
