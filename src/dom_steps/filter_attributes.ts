@@ -12,7 +12,7 @@ const attributesToFilter = new Set([
     'aria-expanded',
     'aria-controls',
     'tabindex',
-    'contenteditable',
+    // 'contenteditable', this is needed for some cases to understand this is an editable field like an input
     'hidden',
     'role',
     'href',
