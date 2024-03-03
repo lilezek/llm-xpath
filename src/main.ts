@@ -14,11 +14,13 @@ import LLMChatProcessChunk from './LLM/llm_chat.js';
 import XPathResult from './xPathResult.js';
 import ClassMatchToClassContains from './xpath_steps/class_match_to_class_contains.js';
 import SortingStrategy from './chunking/sorting_strategy.js';
+import FilterFrameworkClasses from './dom_steps/filter_framework_classes.js';
 
 const domPreprocessing = [
     FilterNodes,
     FilterAttributes,
     FilterNonEnglishClasses,
+    FilterFrameworkClasses,
     FilterEmptyNodes,
     TrimText,
     ExtractLists,
@@ -86,7 +88,6 @@ export async function* llmSelector(
         if (found) {
             load.result = found;
             yield load;
-            return;
         }
     } catch (e) {
         // Ignore ENOENT

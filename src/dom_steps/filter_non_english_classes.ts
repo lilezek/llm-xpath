@@ -2,6 +2,11 @@ import { HTMLElement } from 'node-html-parser';
 import dictionary from '../english_dict.js';
 
 function isEnglish(class_: string) {
+    // Drop classes that are too short
+    if (class_.length < 3) {
+        return false;
+    }
+
     const parts = class_.toLowerCase().split('-');
     for (const part of parts) {
         if (!dictionary.has(part)) {
