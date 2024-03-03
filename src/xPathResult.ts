@@ -11,6 +11,7 @@ export default class XPathResult<N = Node> {
         public chunkSize: number,
         public chunksConsumed: number,
         public model: string = "chatgpt-3.5-turbo",
+        public cached: boolean = false
     ) {}
 
     toString(): string {
@@ -53,6 +54,6 @@ export default class XPathResult<N = Node> {
         const filename = `${directory}${hashString(userInput)}.json`;
         const data = fs.readFileSync(filename, "utf8");
         const json = JSON.parse(data);
-        return new XPathResult(json.xpath, userInput, null as N, json.chunkSize, json.chunksConsumed, json.model);
+        return new XPathResult(json.xpath, userInput, null as N, json.chunkSize, json.chunksConsumed, json.model, true);
     }
 }
