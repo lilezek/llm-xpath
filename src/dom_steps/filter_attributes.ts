@@ -1,32 +1,20 @@
 import { HTMLElement } from 'node-html-parser';
 
 /**
- * Attributes to remove from the elements that are not needed for the text extraction.
+ * Attributes to keep from the elements that may be useful for the text extraction.
  */
 const attributesToFilter = new Set([
-    'style',
-    'aria-labelledby',
-    'aria-describedby',
-    'aria-hidden',
-    'aria-haspopup',
-    'aria-expanded',
-    'aria-controls',
-    'tabindex',
-    // 'contenteditable', this is needed for some cases to understand this is an editable field like an input
-    'hidden',
-    'role',
-    'href',
-    'target',
-    'rel',
-    'dir',
-    'type',
-    'autocomplete',
+    'aria-label',
+    'contenteditable', // this is needed for some cases to understand this is an editable field like an input
+    'title',
+    'class',
+    'id'
 ]);
 
 export default function FilterAttributes(root: HTMLElement) {
     for (const attr in root.attrs) {
         const attrLower = attr.toLowerCase();
-        if (attributesToFilter.has(attrLower)) {
+        if (!attributesToFilter.has(attrLower)) {
             root.removeAttribute(attrLower);
         }
     }
