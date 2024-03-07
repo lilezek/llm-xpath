@@ -5,10 +5,10 @@ import ExtractReadableText from '../dom_steps/extract_text.js';
 export default function SortingStrategy(
     chunks: Iterable<HTMLElement[]>,
     elementToFind: string,
-    nodeToText: (...node: HTMLElement[]) => string = ExtractReadableText) {
+    nodeToText: (...node: HTMLElement[]) => string[] = ExtractReadableText) {
     // Sort desc by similarity to the user input
     const chunksWithSimilarity = Array.from(chunks).map(chunk => {
-        const text = nodeToText(...chunk);
+        const text = nodeToText(...chunk).join(' ');
 
         if (text.includes(elementToFind)) {
             return {

@@ -10,11 +10,12 @@ import TrimText from './dom_steps/trim_text.js';
 import FilterNonEnglishClasses from './dom_steps/filter_non_english_classes.js';
 import SubtreeStrategy from './chunking/subtree_strategy.js';
 import GroupingStrategy from './chunking/grouping_strategy.js';
-import LLMChatProcessChunk from './LLM/llm_chat.js';
+import LLMChatProcessChunk, { LLMChatFindInList } from './LLM/llm_chat.js';
 import XPathResult from './xPathResult.js';
 import ClassMatchToClassContains from './xpath_steps/class_match_to_class_contains.js';
 import SortingStrategy from './chunking/sorting_strategy.js';
 import FilterFrameworkClasses from './dom_steps/filter_framework_classes.js';
+import ExtractReadableText from './dom_steps/extract_text.js';
 
 const domPreprocessing = [
     FilterNodes,
@@ -44,10 +45,6 @@ function find(query: string, chunk: string) {
     const dom = parser.parseFromString(`<div>${chunk}</div>`);
     const found = xpath.select(query, dom);
     return found;
-}
-
-function isNode(node: any): node is Node {
-    return node && 'nodeName' in node;
 }
 
 function domPreprocessingStep(root: HTMLElement) {
@@ -98,6 +95,7 @@ export async function* llmSelector(
 
     const root = parse(htmlOrXml.toString());
     domPreprocessingStep(root);
+    // fs.writeFileSync('filtered_example.html', root.toString());
 
     const sizeLimit = 3000;
     const nodeBundles = SortingStrategy(GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit), hint);
@@ -155,4 +153,22 @@ export async function* llmSelector(
             );
         }
     }
+}
+
+/**
+ * Given a list of elements, find the element that is most likely to be the one the user is looking for.
+ */
+export async function llmFindInList(htmlOrXml: string[], context: string, elementToFind: string) {
+    const userContext = `Context: ${context}.\nFind: ${elementToFind}`;
+    const elements = htmlOrXml.map(s => parse(s.trim()));
+    
+    const listString = elements.map((el) => {
+        const tagName = el.rawTagName === null ? (el.childNodes[0] as HTMLElement).rawTagName : el.rawTagName;
+        const trimmed = tagName + ' ' + ExtractReadableText(el).join(' ').trim();
+        // Remove consecutive spaces and new lines
+        return trimmed.replace(/\s+/g, ' ');
+    });
+    const index = await LLMChatFindInList(listString, userContext);
+
+    return index;
 }

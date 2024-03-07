@@ -15,7 +15,7 @@ const attributes = [
     'id',
 ];
 
-export default function ExtractReadableText(...rootNodes: HTMLElement[]): string {
+export default function ExtractReadableText(...rootNodes: HTMLElement[]): string[] {
     const text = [];
     for (const root of rootNodes) {
         for (const node of root.childNodes) {
@@ -25,11 +25,12 @@ export default function ExtractReadableText(...rootNodes: HTMLElement[]): string
                         text.push(node.attributes[attr]);
                     }
                 }
-                text.push(ExtractReadableText(node));
+                text.push(...ExtractReadableText(node));
             } else {
                 text.push(node.rawText);
             }
         }
     }
-    return text.join(' ');
+    // Return a unique list of text
+    return Array.from(new Set(text));
 }
