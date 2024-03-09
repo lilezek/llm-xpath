@@ -1,13 +1,11 @@
 import { ChatGPTAPI, ChatGPTError } from 'chatgpt';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import systemMessageJson from './system_prompt_en.json' assert { type: "json" };
+import systemMessageFindInListJson from './system_prompt_list_en.json' assert { type: "json" };
 dotenv.config();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const systemMessage = fs.readFileSync(path.join(__dirname, "../../", "LLM/system_prompt_en.txt"), "utf-8");
-const systemMessageFindInList = fs.readFileSync(path.join(__dirname, "../../", "LLM/system_prompt_list_en.txt"), "utf-8");
+const systemMessage = systemMessageJson[0];
+const systemMessageFindInList = systemMessageFindInListJson[0];
 
 const api = new ChatGPTAPI({
     apiKey: process.env.OPENAI_API_KEY!,
