@@ -1,6 +1,13 @@
 import { readFileSync } from "fs";
-import { llmFindInList } from "../main.js";
+import { LLMSelector } from "../main.js";
 import { HTMLElement, parse } from "node-html-parser";
+import dotenv from 'dotenv';
+dotenv.config();
+
+const llmSelector = new LLMSelector({
+    openaiApiKey: process.env.OPENAI_API_KEY!,
+});
+
 
 function findTabbableElements(root: HTMLElement) {
     const elements = root.querySelectorAll("a, button, input, select, textarea, [tabindex]");
@@ -28,7 +35,7 @@ async function main() {
     const example = readFileSync('youtube_lofi_example.html', 'utf8');
     const root = parse(example);
     const elements = findTabbableElements(root);
-    const index = await llmFindInList(elements.map(e => e.toString().trim()), "Youtube page", "A music video");
+    const index = await llmSelector.findInList(elements.map(e => e.toString().trim()), "Youtube page", "A music video");
     console.log(elements[index]);
 }
 

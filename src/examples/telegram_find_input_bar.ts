@@ -1,12 +1,19 @@
 import { readFileSync } from "fs";
-import { llmSelector } from "../main.js";
+import { LLMSelector } from "../main.js";
+import dotenv from 'dotenv';
+dotenv.config();
+
+const llmSelector = new LLMSelector({
+    openaiApiKey: process.env.OPENAI_API_KEY!,
+});
+
 
 /**
  * Usage example
  */
 async function main() {
     const example = readFileSync('telegram_chat_example.html', 'utf8');
-    for await (const res of llmSelector(example, "Telegram", "Write message input bar")) {
+    for await (const res of llmSelector.findXPath(example, "Telegram", "Write message input bar")) {
         console.log(JSON.stringify(res));
         res.save();
         return;
