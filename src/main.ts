@@ -6,7 +6,7 @@ import FilterAttributes from './dom_steps/filter_attributes.js';
 import FilterEmptyNodes from './dom_steps/filter_empty_nodes.js';
 import ExtractLists from './dom_steps/extract_lists.js';
 import TrimText from './dom_steps/trim_text.js';
-import FilterNonEnglishClasses from './dom_steps/filter_non_english_classes.js';
+// import FilterNonEnglishClasses from './dom_steps/filter_non_english_classes.js';
 import SubtreeStrategy from './chunking/subtree_strategy.js';
 import GroupingStrategy from './chunking/grouping_strategy.js';
 import { ChatGPTChat } from './LLM/chatgpt.js';
@@ -19,7 +19,7 @@ import ExtractReadableText from './dom_steps/extract_text.js';
 const domPreprocessing = [
     FilterNodes,
     FilterAttributes,
-    FilterNonEnglishClasses,
+    // FilterNonEnglishClasses,
     FilterFrameworkClasses,
     FilterEmptyNodes,
     TrimText,

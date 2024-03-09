@@ -7,7 +7,7 @@ const attributesToFilter = new Set([
     'aria-label',
     'contenteditable', // this is needed for some cases to understand this is an editable field like an input
     'title',
-    'class',
+    // 'class',
     'id'
 ]);
 
