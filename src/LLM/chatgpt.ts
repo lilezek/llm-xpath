@@ -31,6 +31,11 @@ export class ChatGPTChat {
     private implementation: ChatGPTAPI;
 
     constructor(apiKey: string) {
+        let fetch = globalThis.fetch;
+        if (typeof window !== "undefined") {
+            fetch = window.fetch.bind(window);
+        }
+
         this.implementation = new ChatGPTAPI({
             apiKey,
             completionParams: {
@@ -40,7 +45,8 @@ export class ChatGPTChat {
                 model: "gpt-3.5-turbo",
                 presence_penalty: 0,
             },
-            maxModelTokens: 16_000
+            maxModelTokens: 16_000,
+            fetch,
         });
     }
 
