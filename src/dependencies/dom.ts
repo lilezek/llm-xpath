@@ -30,13 +30,11 @@ export interface TextNode extends Node {
 
 export interface Document extends HTMLElement {
     nodeType: NodeType.DOCUMENT_NODE;
-
 }
 
 export interface HTMLElement extends Node {
     nodeType: NodeType.ELEMENT_NODE | NodeType.DOCUMENT_NODE;
     tagName: string;
-    attributes: NamedNodeMap;
     classList: DOMTokenList;
     outerHTML: string;
 
@@ -83,5 +81,12 @@ export class DOMParser {
     // From https://github.com/taoqf/node-html-parser/blob/a1892f15bcafcdd964e0de80518e7ff740f314f8/src/nodes/text.ts#L72
     static isWhitespace(n: Node) {
         return /^(\s|&nbsp;)*$/.test(n.textContent ?? '');
+    }
+
+    static getAttributeNames(el: HTMLElement) {
+        if ('getAttributeNames' in el) {
+            return (el as any).getAttributeNames() as string[];
+        }
+        return Object.keys((el as any).attributes);
     }
 }

@@ -1,12 +1,8 @@
-import { HTMLElement, isHtmlElement } from "../dependencies/dom.js";
-
-const attributesToIgnore = new Set([
-    'class',
-]);
+import { DOMParser, HTMLElement, isHtmlElement } from "../dependencies/dom.js";
 
 export default function FilterEmptyNodes(root: HTMLElement): boolean {
     const hasText = root.textContent && root.textContent.trim();
-    const hasAttributes = Object.keys(root.attributes).filter((attr) => !attributesToIgnore.has(attr)).length > 0;
+    const hasAttributes = DOMParser.getAttributeNames(root).length > 0;
     let hasChildren = false;
     for (const node of root.childNodes) {
         if (isHtmlElement(node)) {
