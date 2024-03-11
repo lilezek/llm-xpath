@@ -67,8 +67,8 @@ export class LLMSelector {
         this.storage = options.storage;
     }
 
-    private find(query: string, chunk: string) {
-        const dom = this.xmlParser.parse(`<div>${chunk}</div>`);
+    private find(query: string, html: string) {
+        const dom = this.xmlParser.parse(html);
         const found = this.xpath.select(query, dom);
         return found;
     }
