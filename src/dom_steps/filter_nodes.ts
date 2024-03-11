@@ -1,4 +1,4 @@
-import { HTMLElement } from 'node-html-parser';
+import { HTMLElement, isHtmlElement } from "../dependencies/dom.js";
 
 /**
  * Nodes to remove from the HTML tree that are not needed for the text extraction.
@@ -32,7 +32,7 @@ export default function FilterNodes(root: HTMLElement) {
         return;
     }
     for (const node of root.childNodes) {
-        if (node instanceof HTMLElement) {
+        if (isHtmlElement(node)) {
             FilterNodes(node);
         }
     }

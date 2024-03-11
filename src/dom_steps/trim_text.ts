@@ -1,9 +1,10 @@
-import { HTMLElement } from 'node-html-parser';
+import { DOMParser, HTMLElement, isHtmlElement } from "../dependencies/dom.js";
+
 
 export default function TrimText(root: HTMLElement) {
-    root.removeWhitespace();
+    DOMParser.removeWhitespace(root);
     for (const node of root.childNodes) {
-        if (node instanceof HTMLElement) {
+        if (isHtmlElement(node)) {
             TrimText(node);
         }
     }

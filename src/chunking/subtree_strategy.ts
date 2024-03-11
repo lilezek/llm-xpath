@@ -1,9 +1,8 @@
-import { HTMLElement } from 'node-html-parser';
-
+import { HTMLElement, isHtmlElement } from "../dependencies/dom.js";
 
 export default function* SubtreeStrategy(root: HTMLElement, sizeLimit: number): Iterable<HTMLElement> {
     for (const node of root.childNodes) {
-        if (node instanceof HTMLElement) {
+        if (isHtmlElement(node)) {
             const text = node.toString();
             if (text.length <= sizeLimit) {
                 yield node;

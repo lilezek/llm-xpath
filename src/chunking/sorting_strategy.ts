@@ -1,4 +1,4 @@
-import { HTMLElement } from 'node-html-parser';
+import { HTMLElement } from '../dependencies/dom.js';
 import * as stringSimilarity from 'string-similarity';
 import ExtractReadableText from '../dom_steps/extract_text.js';
 

@@ -1,10 +1,7 @@
-import { HTMLElement, parse } from 'node-html-parser';
-import xpath from 'xpath';
-import { DOMParser } from '@xmldom/xmldom';
 import FilterNodes from './dom_steps/filter_nodes.js';
 import FilterAttributes from './dom_steps/filter_attributes.js';
 import FilterEmptyNodes from './dom_steps/filter_empty_nodes.js';
-import ExtractLists from './dom_steps/extract_lists.js';
+// import ExtractLists from './dom_steps/extract_lists.js';
 import TrimText from './dom_steps/trim_text.js';
 // import FilterNonEnglishClasses from './dom_steps/filter_non_english_classes.js';
 import SubtreeStrategy from './chunking/subtree_strategy.js';
@@ -15,6 +12,9 @@ import ClassMatchToClassContains from './xpath_steps/class_match_to_class_contai
 import SortingStrategy from './chunking/sorting_strategy.js';
 import FilterFrameworkClasses from './dom_steps/filter_framework_classes.js';
 import ExtractReadableText from './dom_steps/extract_text.js';
+import { XPath } from './dependencies/xpath.js';
+import { DOMParser, HTMLElement } from './dependencies/dom.js';
+import { XMLParser } from './dependencies/xml.js';
 
 const domPreprocessing = [
     FilterNodes,
@@ -23,28 +23,12 @@ const domPreprocessing = [
     FilterFrameworkClasses,
     FilterEmptyNodes,
     TrimText,
-    ExtractLists,
+    // ExtractLists,
 ];
 
 const xpathPostprocessing = [
     ClassMatchToClassContains
 ];
-
-const noop = () => { };
-
-const parser = new DOMParser({
-    errorHandler: {
-        warning: (msg) => noop,
-        error: (msg) => noop,
-        fatalError: (msg) => noop,
-    },
-});
-
-function find(query: string, chunk: string) {
-    const dom = parser.parseFromString(`<div>${chunk}</div>`);
-    const found = xpath.select(query, dom);
-    return found;
-}
 
 function domPreprocessingStep(root: HTMLElement) {
     for (const step of domPreprocessing) {
@@ -59,26 +43,30 @@ function XPathPostprocessingStep(query: string) {
     return query;
 }
 
-function first(list: xpath.SelectReturnType) {
-    if (list instanceof Array) {
-        if (list.length > 0) {
-            return list[0];
-        }
-    } else {
-        return list;
-    }
-    return null;
-}
-
 export interface LLMSelectorOptions {
     openaiApiKey: string;
+    xpath: XPath;
+    domParser: DOMParser;
+    xmlParser: XMLParser;
 }
 
 export class LLMSelector {
     private openaiApi: ChatGPTChat;
+    private xpath: XPath;
+    private domParser: DOMParser;
+    private xmlParser: XMLParser;
 
     constructor(options: LLMSelectorOptions) {
         this.openaiApi = new ChatGPTChat(options.openaiApiKey);
+        this.xpath = options.xpath;
+        this.domParser = options.domParser;
+        this.xmlParser = options.xmlParser;
+    }
+
+    private find(query: string, chunk: string) {
+        const dom = this.xmlParser.parse(`<div>${chunk}</div>`);
+        const found = this.xpath.select(query, dom);
+        return found;
     }
 
     async *findXPath(
@@ -88,10 +76,11 @@ export class LLMSelector {
         hint: string = elementToFind,
         probabilityCut = 0.66) {
         const userInput = `Context: ${context}.\nElement to find: ${elementToFind}`;
+        const root = this.domParser.parse(htmlOrXml.toString());
 
         try {
-            const load = XPathResult._load(userInput);
-            const found = first(find(load.xpath, htmlOrXml.toString()));
+            const load = await XPathResult._load(userInput);
+            const [found] = this.find(load.xpath, htmlOrXml.toString());
             if (found) {
                 load.result = found;
                 yield load;
@@ -103,7 +92,6 @@ export class LLMSelector {
             }
         }
 
-        const root = parse(htmlOrXml.toString());
         domPreprocessingStep(root);
         // fs.writeFileSync('filtered_example.html', root.toString());
 
@@ -125,7 +113,7 @@ export class LLMSelector {
                     continue;
                 }
 
-                const found = first(find(xpath, htmlOrXml.toString()));
+                const [found] = this.find(xpath, htmlOrXml.toString());
 
                 if (!found) {
                     continue;
@@ -151,7 +139,7 @@ export class LLMSelector {
                 return;
             }
 
-            const found = first(find(xpath, htmlOrXml.toString()));
+            const [found] = this.find(xpath, htmlOrXml.toString());
 
             if (found) {
                 yield new XPathResult(
@@ -170,10 +158,10 @@ export class LLMSelector {
      */
     async findInList(htmlOrXml: string[], context: string, elementToFind: string) {
         const userContext = `Context: ${context}.\nFind: ${elementToFind}`;
-        const elements = htmlOrXml.map(s => parse(s.trim()));
+        const elements = htmlOrXml.map(s => this.domParser.parse(s.trim()));
 
         const listString = elements.map((el) => {
-            const tagName = el.rawTagName === null ? (el.childNodes[0] as HTMLElement).rawTagName : el.rawTagName;
+            const tagName = el.tagName === null ? (el.childNodes[0] as HTMLElement).tagName : el.tagName;
             const trimmed = tagName + ' ' + ExtractReadableText(el).join(' ').trim();
             // Remove consecutive spaces and new lines
             return trimmed.replace(/\s+/g, ' ');

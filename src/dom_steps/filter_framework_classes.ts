@@ -1,7 +1,8 @@
 /**
  * @todo We should improve the list of classes from other frameworks.
  */
-import { HTMLElement } from 'node-html-parser';
+
+import { HTMLElement, isHtmlElement } from "../dependencies/dom.js";
 
 function startsWithMaterial(class_: string) {
     return class_.startsWith('mat-') || class_.startsWith('mdc-') || class_.startsWith('material-');
@@ -16,7 +17,7 @@ export default function FilterFrameworkClasses(root: HTMLElement) {
         root.setAttribute('class', nonFrameworkClasses.join(' '));
     }
     for (const node of root.childNodes) {
-        if (node instanceof HTMLElement) {
+        if (isHtmlElement(node)) {
             FilterFrameworkClasses(node);
         }
     }

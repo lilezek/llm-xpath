@@ -1,4 +1,4 @@
-import { HTMLElement } from "node-html-parser";
+import { HTMLElement } from "../dependencies/dom.js";
 
 export default function* GroupingStrategy(nodes: Iterable<HTMLElement>, sizeLimit: number): Iterable<HTMLElement[]> {
     let currentChunk: HTMLElement[] = [];

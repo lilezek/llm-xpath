@@ -38,11 +38,11 @@ function findTabbableElements(root: HTMLElement) {
  */
 async function main() {
     // I've got this HTML from https://www.whatismyip.com/
-    const example = readFileSync('youtube_lofi_example.html', 'utf8');
+    const example = readFileSync('telegram_example.html', 'utf8');
     const root = parse(example);
     const elements = findTabbableElements(root);
-    const index = await llmSelector.findInList(elements.map(e => e.toString().trim()), "Youtube page", "A music video");
-    console.log(elements[index]);
+    const index = await llmSelector.findInList(elements.map(e => e.toString().trim()), "Telegram page", "Alfredo Rubio");
+    console.log(elements[index].toString());
 }
 
 main().then(() => console.log('done')).catch(console.error);

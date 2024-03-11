@@ -18,11 +18,13 @@ const llmSelector = new LLMSelector({
  * Usage example
  */
 async function main() {
-    const example = readFileSync('telegram_chat_example.html', 'utf8');
-    for await (const res of llmSelector.findXPath(example, "Telegram", "Write message input bar")) {
+    // I've got this HTML from https://www.whatismyip.com/
+    const example = readFileSync('ytd_thumbnail_example.html', 'utf8');
+    for await (const res of llmSelector.findXPath(example, "A youtube video", "The youtube thumbnail")) {
         console.log(JSON.stringify(res));
-        await res.save();
-        return;
+        console.log(res.result.toString());
+        // await res.save();
+        // return;
     }
 }
 

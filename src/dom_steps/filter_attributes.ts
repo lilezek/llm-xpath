@@ -1,4 +1,4 @@
-import { HTMLElement } from 'node-html-parser';
+import { HTMLElement, isHtmlElement } from "../dependencies/dom.js";
 
 /**
  * Attributes to keep from the elements that may be useful for the text extraction.
@@ -12,7 +12,7 @@ const attributesToFilter = new Set([
 ]);
 
 export default function FilterAttributes(root: HTMLElement) {
-    for (const attr in root.attrs) {
+    for (const attr in root.attributes) {
         const attrLower = attr.toLowerCase();
         if (!attributesToFilter.has(attrLower)) {
             root.removeAttribute(attrLower);
@@ -24,7 +24,7 @@ export default function FilterAttributes(root: HTMLElement) {
     }
 
     for (const node of root.childNodes) {
-        if (node instanceof HTMLElement) {
+        if (isHtmlElement(node)) {
             FilterAttributes(node);
         }
     }

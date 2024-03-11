@@ -1,4 +1,4 @@
-import { HTMLElement } from 'node-html-parser';
+import { HTMLElement } from "../dependencies/dom.js";
 
 enum CompatibleElements {
     NOT_COMPATIBLE = 0,
@@ -13,7 +13,7 @@ enum CompatibleElements {
  * @param other 
  */
 function AreCompatible(one: HTMLElement, other: HTMLElement) {
-    if (one.rawTagName !== other.rawTagName) {
+    if (one.tagName !== other.tagName) {
         return CompatibleElements.NOT_COMPATIBLE;
     }
 
