@@ -3,7 +3,7 @@ import { HTMLElement, isHtmlElement } from "../dependencies/dom.js";
 export default function* SubtreeStrategy(root: HTMLElement, sizeLimit: number): Iterable<HTMLElement> {
     for (const node of root.childNodes) {
         if (isHtmlElement(node)) {
-            const text = node.toString();
+            const text = node.outerHTML;
             if (text.length <= sizeLimit) {
                 yield node;
             }

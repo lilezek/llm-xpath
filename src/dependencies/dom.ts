@@ -38,6 +38,7 @@ export interface HTMLElement extends Node {
     tagName: string;
     attributes: NamedNodeMap;
     classList: DOMTokenList;
+    outerHTML: string;
 
     remove(): void;
     getAttribute(key: string): string | null;

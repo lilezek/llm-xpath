@@ -92,7 +92,7 @@ export class LLMSelector {
         }
 
         domPreprocessingStep(root);
-        // fs.writeFileSync('filtered_example.html', root.toString());
+        // fs.writeFileSync('filtered_example.html', root.outerHTML);
 
         const sizeLimit = 3000;
         const nodeBundles = SortingStrategy(GroupingStrategy(SubtreeStrategy(root, sizeLimit), sizeLimit), hint);
@@ -100,7 +100,7 @@ export class LLMSelector {
         let highestProbResponse = null;
         let i = -1;
         for (const nodeBundle of nodeBundles) {
-            const chunk = nodeBundle.map(n => n.toString()).join('');
+            const chunk = nodeBundle.map(n => n.outerHTML).join('');
             i++;
             // fs.writeFileSync(`chunks/${i}.html`, chunk);
             let llmResponse = await this.openaiApi.processChunk(chunk, userInput);
