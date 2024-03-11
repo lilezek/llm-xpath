@@ -15,6 +15,7 @@ import ExtractReadableText from './dom_steps/extract_text.js';
 import { XPath } from './dependencies/xpath.js';
 import { DOMParser, HTMLElement } from './dependencies/dom.js';
 import { XMLParser } from './dependencies/xml.js';
+import { Storage } from './dependencies/storage.js';
 
 const domPreprocessing = [
     FilterNodes,
@@ -48,6 +49,7 @@ export interface LLMSelectorOptions {
     xpath: XPath;
     domParser: DOMParser;
     xmlParser: XMLParser;
+    storage: Storage;
 }
 
 export class LLMSelector {
@@ -55,12 +57,14 @@ export class LLMSelector {
     private xpath: XPath;
     private domParser: DOMParser;
     private xmlParser: XMLParser;
+    private storage: Storage;
 
     constructor(options: LLMSelectorOptions) {
         this.openaiApi = new ChatGPTChat(options.openaiApiKey);
         this.xpath = options.xpath;
         this.domParser = options.domParser;
         this.xmlParser = options.xmlParser;
+        this.storage = options.storage;
     }
 
     private find(query: string, chunk: string) {
@@ -78,17 +82,12 @@ export class LLMSelector {
         const userInput = `Context: ${context}.\nElement to find: ${elementToFind}`;
         const root = this.domParser.parse(htmlOrXml.toString());
 
-        try {
-            const load = await XPathResult._load(userInput);
+        const load = await XPathResult._load(this.storage, userInput);
+        if (load) {
             const [found] = this.find(load.xpath, htmlOrXml.toString());
             if (found) {
                 load.result = found;
                 yield load;
-            }
-        } catch (e) {
-            // Ignore ENOENT
-            if (!(e instanceof Error && 'code' in e && e.code === 'ENOENT')) {
-                throw e;
             }
         }
 
@@ -120,6 +119,7 @@ export class LLMSelector {
                 }
 
                 yield new XPathResult(
+                    this.storage,
                     xpath,
                     userInput,
                     found,
@@ -143,6 +143,7 @@ export class LLMSelector {
 
             if (found) {
                 yield new XPathResult(
+                    this.storage,
                     xpath,
                     userInput,
                     found,

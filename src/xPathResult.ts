@@ -1,10 +1,10 @@
-import * as fs from "fs";
+import { Storage } from "./dependencies/storage.js";
 import { hashString } from "./utils.js";
 
-const DEFAULT_SAVE_DIRECTORY = ".llmxpath/";
 
 export default class XPathResult<N = Node> {
     constructor(
+        private storage: Storage,
         public xpath: string,
         public userInput: string,
         public result: N,
@@ -12,7 +12,7 @@ export default class XPathResult<N = Node> {
         public chunksConsumed: number,
         public model: string = "chatgpt-3.5-turbo",
         public cached: boolean = false
-    ) {}
+    ) { }
 
     toString(): string {
         return this.xpath;
@@ -28,23 +28,26 @@ export default class XPathResult<N = Node> {
     }
 
     async save() {
-        const directory = DEFAULT_SAVE_DIRECTORY;
-        if (!fs.existsSync(directory)) {
-            await fs.promises.mkdir(directory);
-        }
-        const filename = `${directory}${await hashString(this.userInput)}.json`;
-        return fs.promises.writeFile(filename, JSON.stringify(this.toJSON(), null, 2));
+        const key = `${await hashString(this.userInput)}.json`;
+        return this.storage.setItem(key, JSON.stringify(this.toJSON()));
     }
 
 
     /**
      * Interal use only
      */
-    static async _load<N = Node>(userInput: string) {
-        const directory = DEFAULT_SAVE_DIRECTORY;
-        const filename = `${directory}${await hashString(userInput)}.json`;
-        const data = fs.readFileSync(filename, "utf8");
-        const json = JSON.parse(data);
-        return new XPathResult(json.xpath, userInput, null as N, json.chunkSize, json.chunksConsumed, json.model, true);
+    static async _load<N = Node>(storage: Storage, userInput: string) {
+        const key = `${await hashString(userInput)}.json`;
+        let json: any;
+        try {
+            const data = (await storage.getItem(key))!;
+            json = JSON.parse(data);
+            if (!json) {
+                return null;
+            }
+        } catch (e) {
+            return null;
+        }
+        return new XPathResult(storage, json.xpath, userInput, null as N, json.chunkSize, json.chunksConsumed, json.model, true);
     }
 }

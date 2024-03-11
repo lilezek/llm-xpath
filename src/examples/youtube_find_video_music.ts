@@ -4,6 +4,7 @@ import { HTMLElement, parse } from "node-html-parser";
 import DOMParser from "./providers/dom_parser_provider.js";
 import XMLParser from "./providers/xml_parser_provider.js";
 import XPath from "./providers/xpath_provider.js";
+import Storage from "./providers/storage_provider.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -12,6 +13,7 @@ const llmSelector = new LLMSelector({
     domParser: DOMParser,
     xmlParser: XMLParser,
     xpath: XPath,
+    storage: Storage,
 });
 
 
