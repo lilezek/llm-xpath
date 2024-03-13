@@ -2,7 +2,7 @@
  * Extracts readable text from the HTML text nodes or attributes such as aria-label attributes.
  */
 
-import { HTMLElement, Node, isHtmlElement } from "../dependencies/dom.js";
+import { Node, isHtmlElement } from "../dependencies/dom.js";
 
 const attributes = [
     'aria-label',
@@ -15,20 +15,21 @@ const attributes = [
     'id',
 ];
 
-export default function ExtractReadableText(...rootNodes: HTMLElement[]): string[] {
+export default function ExtractReadableText(...rootNodes: Node[]): string[] {
     const text = [];
-    for (const root of rootNodes) {
-        for (const node of root.childNodes) {
-            if (isHtmlElement(node)) {
-                for (const attr of attributes) {
-                    if (node.hasAttribute(attr)) {
-                        text.push(node.getAttribute(attr)!);
-                    }
+    for (const node of rootNodes) {
+        if (isHtmlElement(node)) {
+            for (const attr of attributes) {
+                if (node.hasAttribute(attr)) {
+                    text.push(node.getAttribute(attr)!);
                 }
-                text.push(...ExtractReadableText(node));
-            } else {
-                text.push((node as Node).rawText ?? node.textContent?.trim() ?? '');
             }
+        } else {
+            text.push((node as Node).rawText ?? node.textContent?.trim() ?? '');
+        }
+
+        for (const child of node.childNodes) {
+            text.push(...ExtractReadableText(child));
         }
     }
     // Return a unique list of text
