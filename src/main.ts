@@ -163,7 +163,8 @@ export class LLMSelector {
 
         const listString = elements.map((el) => {
             const tagName = el.tagName === null ? (el.childNodes[0] as HTMLElement).tagName : el.tagName;
-            const trimmed = tagName + ' ' + ExtractReadableText(el).join(' ').trim();
+            const contentEditable = el.getAttribute('contenteditable');
+            const trimmed = `<${tagName}${contentEditable? ' ContentEditable' : ''}> ${ExtractReadableText(el).join(' ').trim()}`;
             // Remove consecutive spaces and new lines
             return trimmed.replace(/\s+/g, ' ');
         });
