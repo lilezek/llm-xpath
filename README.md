@@ -8,7 +8,7 @@ See src/examples/providers on how to construct the selector
 
 ```ts
 const llmSelector = new LLMSelector({
-    openaiApiKey: process.env.OPENAI_API_KEY!,
+    chat: new ChatGPTChat(process.env.OPENAI_API_KEY!),
     domParser: DOMParser,
     xmlParser: XMLParser,
     xpath: XPath,

@@ -1,23 +1,21 @@
 import { readFileSync } from "fs";
 import { LLMSelector } from "../main.js";
-import { HTMLElement, parse } from "node-html-parser";
 import DOMParser from "./providers/dom_parser_provider.js";
 import XMLParser from "./providers/xml_parser_provider.js";
 import XPath from "./providers/xpath_provider.js";
 import Storage from "./providers/storage_provider.js";
 import dotenv from 'dotenv';
-import { ChatGPTChat } from "../LLM/chatgpt.js";
+import { OllamaChat } from "../LLM/ollama.js";
+import { HTMLElement, parse } from "node-html-parser";
 dotenv.config();
 
 const llmSelector = new LLMSelector({
-    chat: new ChatGPTChat(process.env.OPENAI_API_KEY!),
+    chat: new OllamaChat('deepseek-r1:14b'),
     domParser: DOMParser,
     xmlParser: XMLParser,
     xpath: XPath,
     storage: Storage,
 });
-
-
 
 function findTabbableElements(root: HTMLElement) {
     const elements = root.querySelectorAll("a, button, input, select, textarea, [tabindex]");
@@ -41,11 +39,11 @@ function findTabbableElements(root: HTMLElement) {
  * Usage example
  */
 async function main() {
-    // I've got this HTML from https://www.whatismyip.com/
-    const example = readFileSync('telegram_example.html', 'utf8');
+    // I've got this HTML gmail main page.
+    const example = readFileSync('gmail.example.html', 'utf8');
     const root = parse(example);
     const elements = findTabbableElements(root);
-    const index = await llmSelector.findInList(elements.map(e => e.toString().trim()), "Telegram page", "Alfredo Rubio");
+    const index = await llmSelector.findInList(elements.map(e => e.toString().trim()), "Gmail main page", "Compose button");
     console.log(elements[index].toString());
 }
 

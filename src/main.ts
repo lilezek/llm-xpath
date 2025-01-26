@@ -6,7 +6,7 @@ import TrimText from './dom_steps/trim_text.js';
 // import FilterNonEnglishClasses from './dom_steps/filter_non_english_classes.js';
 import SubtreeStrategy from './chunking/subtree_strategy.js';
 import GroupingStrategy from './chunking/grouping_strategy.js';
-import { ChatGPTChat } from './LLM/chatgpt.js';
+import { Chat } from './LLM/chat.js';
 import XPathResult from './xPathResult.js';
 import ClassMatchToClassContains from './xpath_steps/class_match_to_class_contains.js';
 import SortingStrategy from './chunking/sorting_strategy.js';
@@ -16,6 +16,7 @@ import { XPath } from './dependencies/xpath.js';
 import { DOMParser, HTMLElement } from './dependencies/dom.js';
 import { XMLParser } from './dependencies/xml.js';
 import { Storage } from './dependencies/storage.js';
+import fs from 'fs';
 
 const domPreprocessing = [
     FilterNodes,
@@ -45,7 +46,7 @@ function XPathPostprocessingStep(query: string) {
 }
 
 export interface LLMSelectorOptions {
-    openaiApiKey: string;
+    chat: Chat;
     xpath: XPath;
     domParser: DOMParser;
     xmlParser: XMLParser;
@@ -53,14 +54,14 @@ export interface LLMSelectorOptions {
 }
 
 export class LLMSelector {
-    private openaiApi: ChatGPTChat;
+    private chatApi: Chat;
     private xpath: XPath;
     private domParser: DOMParser;
     private xmlParser: XMLParser;
     private storage: Storage;
 
     constructor(options: LLMSelectorOptions) {
-        this.openaiApi = new ChatGPTChat(options.openaiApiKey);
+        this.chatApi = options.chat;
         this.xpath = options.xpath;
         this.domParser = options.domParser;
         this.xmlParser = options.xmlParser;
@@ -103,7 +104,7 @@ export class LLMSelector {
             const chunk = nodeBundle.map(n => n.outerHTML).join('');
             i++;
             // fs.writeFileSync(`chunks/${i}.html`, chunk);
-            let llmResponse = await this.openaiApi.processChunk(chunk, userInput);
+            let llmResponse = await this.chatApi.processChunk(chunk, userInput);
 
             // Return immediately if the response is above the probability cut
             if (llmResponse.p >= probabilityCut) {
@@ -168,9 +169,16 @@ export class LLMSelector {
             // Remove consecutive spaces and new lines
             return trimmed.replace(/\s+/g, ' ');
         });
-        const index = await this.openaiApi.findInList(listString, userContext);
+        const index = await this.chatApi.findInList(listString, userContext);
 
         return index;
     }
 }
 
+import { parse } from 'node-html-parser';
+
+const provider = {
+    parse(html: string) {
+        return parse(html);
+    }
+}

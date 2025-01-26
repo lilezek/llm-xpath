@@ -1,36 +1,16 @@
 import { ChatGPTAPI, ChatGPTError } from 'chatgpt';
 import systemMessageJson from './system_prompt_en.json' assert { type: "json" };
 import systemMessageFindInListJson from './system_prompt_list_en.json' assert { type: "json" };
+import { Chat } from './chat.js';
 
 const systemMessage = systemMessageJson[0];
 const systemMessageFindInList = systemMessageFindInListJson[0];
 
-const jsonResponseRE = /({.+})/gms;
-
-export interface XPathLLMResponse {
-    xpath: string | null;
-    p: number;
-}
-
-function isXPathLLMResponse(json: any): json is XPathLLMResponse {
-    if (!json || !('xpath' in json || 'p' in json)) {
-        return typeof json.p === 'number';
-    }
-    return true;
-}
-
-interface ListIndexLLMResponse {
-    index: number;
-}
-
-function isListIndexLLMResponse(json: any): json is ListIndexLLMResponse {
-    return json && typeof json['index'] === 'number';
-}
-
-export class ChatGPTChat {
+export class ChatGPTChat extends Chat {
     private implementation: ChatGPTAPI;
 
     constructor(apiKey: string) {
+        super(systemMessage, systemMessageFindInList);
         let fetch = globalThis.fetch;
         if (typeof window !== "undefined") {
             fetch = window.fetch.bind(window);
@@ -50,7 +30,7 @@ export class ChatGPTChat {
         });
     }
 
-    private async llmChat(system: string, prompt: string, retries: number) {
+    protected async llmChat(system: string, prompt: string, retries: number) {
         let response;
         let attempts = 0;
         while (attempts < retries) {
@@ -73,57 +53,4 @@ export class ChatGPTChat {
 
         return response.text;
     }
-
-    async processChunk(chunk: string, userContext: string, retries = 3) {
-        const prompt = `${userContext}\n\`\`\`${chunk}\`\`\``;
-        const text = await this.llmChat(systemMessage, prompt, retries);
-
-        const m = text.match(jsonResponseRE);
-        let inner = text;
-
-        if (m) {
-            inner = m[0].trim();
-        }
-
-        let object = null;
-        try {
-            object = JSON.parse(inner);
-        } catch (e) {
-            throw new Error(`Not a json: '${inner}', reason: ${e}`);
-        }
-
-        if (isXPathLLMResponse(object)) {
-            return object;
-        } else {
-            throw new Error(`Invalid json: '${inner}'`);
-        }
-    }
-
-    async findInList(list: string[], userContext: string, retries = 3) {
-        const listString = list.map((s, i) => `${i}. ${s}`).filter(s => /^\d+\.\s*$/.test(s) === false);
-        const prompt = `${userContext}\n\n${listString.join('\n')}`;
-
-        const text = await this.llmChat(systemMessageFindInList, prompt, retries);
-
-        const m = text.match(jsonResponseRE);
-
-        let inner = text;
-        if (m) {
-            inner = m[0].trim();
-        }
-
-        let object = null;
-        try {
-            object = JSON.parse(inner);
-        } catch (e) {
-            throw new Error(`Not a json: '${inner}', reason: ${e}`);
-        }
-
-        if (isListIndexLLMResponse(object)) {
-            return object.index;
-        } else {
-            throw new Error(`Invalid json: '${inner}'`);
-        }
-    }
-
 }

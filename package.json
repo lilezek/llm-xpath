@@ -17,13 +17,15 @@
   "dependencies": {
     "chatgpt": "^5.2.5",
     "node-html-parser": "^6.1.12",
-    "string-similarity": "^4.0.4"
+    "string-similarity": "^4.0.4",
+    "ollama": "^0.5.12"
   },
   "devDependencies": {
-    "@xmldom/xmldom": "^0.8.10",
-    "xpath": "^0.0.34",
-    "dotenv": "^16.4.5",
     "@types/node": "^20.11.19",
-    "@types/string-similarity": "^4.0.2"
+    "@types/string-similarity": "^4.0.2",
+    "@xmldom/xmldom": "^0.8.10",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.7.3",
+    "xpath": "^0.0.34"
   }
 }

@@ -6,10 +6,11 @@ import XMLParser from "./providers/xml_parser_provider.js";
 import XPath from "./providers/xpath_provider.js";
 import Storage from "./providers/storage_provider.js";
 import dotenv from 'dotenv';
+import { ChatGPTChat } from "../LLM/chatgpt.js";
 dotenv.config();
 
 const llmSelector = new LLMSelector({
-    openaiApiKey: process.env.OPENAI_API_KEY!,
+    chat: new ChatGPTChat(process.env.OPENAI_API_KEY!),
     domParser: DOMParser,
     xmlParser: XMLParser,
     xpath: XPath,
